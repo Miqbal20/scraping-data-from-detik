@@ -12,16 +12,11 @@ headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/
 
 def get_total_pages(query):
     params = {
-        'query': 'crypto',
+        'query': query,
         'siteid': '2',
     }
 
     res = requests.get(url, params=params, headers=headers)
-
-    try:
-        os.mkdir('temp')
-    except FileExistsError:
-        pass
 
     soup = BeautifulSoup(res.text, 'html.parser')
     pagination = soup.find('div', 'paging text_center')
@@ -33,10 +28,11 @@ def get_total_pages(query):
     return total
 
 
-def get_all_item():
+def get_all_item(query, pages):
     params = {
-        'query': 'crypto',
-        'siteid': '2'
+        'query': query,
+        'siteid': '2',
+        'page': pages,
     }
     res = requests.get(url, params=params, headers=headers)
 
@@ -68,13 +64,46 @@ def get_all_item():
         pass
 
     # export ke json
-    with open(f'json_result/j.json', 'w+') as json_data:
+    with open(f'json_result/{query}_in_page_{pages}.json', 'w+') as json_data:
         json.dump(newslist, json_data)
-    print(f'json berhasil dibuat')
+    print(f'json page {pages} berhasil dibuat')
     return newslist
 
-    # print(newslist)
+
+def create_document(data_frame, file_name, pages):
+    try:
+        os.mkdir('data_result')
+    except FileExistsError:
+        pass
+
+    # export ke csv & excel
+    df = pd.DataFrame(data_frame)
+    df.to_csv(f'data_result/{file_name}.csv', index=False)
+    print(f'Data {file_name} di page {pages} berhasil di Export ke Csv')
+    df.to_excel(f'data_result/{file_name}.xlsx', index=False)
+    print(f'Data {file_name} di page {pages} berhasil di Export ke Excel')
+
+
+def run():
+    query = input('Masukan kata kunci: ')
+    total = get_total_pages(query)
+    final_result = []
+    for pages in range(total):
+        pages += 1
+        final_result += get_all_item(query, pages)
+
+        # formating data
+        try:
+            os.mkdir('reports')
+        except FileExistsError:
+            pass
+
+        with open('reports/{}.json'.format(query), 'w+') as final_data:
+            json.dump(final_result, final_data)
+
+        print('Report Json berhasil dibuat\n')
+        create_document(final_result, query, pages)
 
 
 if __name__ == '__main__':
-    get_all_item()
+    run()
