@@ -39,17 +39,10 @@ def get_all_item(query, pages):
             'tanggal': date,
         }
         newslist.append(data_dict)
-
-    try:
-        os.mkdir('json_result')
-    except FileExistsError:
-        pass
-
-    # export ke json
-    with open(f'json_result/{query}_in_page_{pages}.json', 'w+') as json_data:
-        json.dump(newslist, json_data)
-    print(f'json page {pages} berhasil dibuat')
-    return newslist
+    if not newslist:
+        return None
+    else:
+        return newslist
 
 
 def create_document(data_frame, file_name, pages):
@@ -63,30 +56,33 @@ def create_document(data_frame, file_name, pages):
     df.to_csv(f'data_result/{file_name}.csv', index=False)
     print(f'Data {file_name} di page {pages} berhasil di Export ke Csv')
     df.to_excel(f'data_result/{file_name}.xlsx', index=False)
-    print(f'Data {file_name} di page {pages} berhasil di Export ke Excel')
+    print(f'Data {file_name} di page {pages} berhasil di Export ke Excel\n')
 
 
 def run():
     query = input('Masukan kata kunci: ')
-    max_pages = input('Maksimal pages ')
-    total = int(max_pages)
+    total = 99999999
     final_result = []
     try:
         for pages in range(total):
             pages += 1
-            final_result += get_all_item(query, pages)
+            check_item = get_all_item(query, pages)
+            if check_item is None:
+                print("Scraping telah selesai")
+                quit()
+            else:
+                final_result += get_all_item(query, pages)
+                # formating data
+                try:
+                    os.mkdir('reports')
+                except FileExistsError:
+                    pass
 
-            # formating data
-            try:
-                os.mkdir('reports')
-            except FileExistsError:
-                pass
+                with open('reports/{}.json'.format(query), 'w+') as final_data:
+                    json.dump(final_result, final_data)
 
-            with open('reports/{}.json'.format(query), 'w+') as final_data:
-                json.dump(final_result, final_data)
-
-            print('Report Json berhasil dibuat\n')
-            create_document(final_result, query, pages)
+                print('Report Json berhasil dibuat')
+                create_document(final_result, query, pages)
     except Exception:
         print('Proses Scraping selesai')
 
