@@ -7,25 +7,7 @@ import pandas as pd
 # Definisi Parameter
 url = 'https://www.detik.com/search/searchall?'
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-           '(KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36'}
-
-
-def get_total_pages(query):
-    params = {
-        'query': query,
-        'siteid': '2',
-    }
-
-    res = requests.get(url, params=params, headers=headers)
-
-    soup = BeautifulSoup(res.text, 'html.parser')
-    pagination = soup.find('div', 'paging text_center')
-    pages = pagination.findAll('a')
-    total_pages = []
-    for page in pages:
-        total_pages.append(page.text)
-    total = int(max(total_pages))
-    return total
+                         '(KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36'}
 
 
 def get_all_item(query, pages):
@@ -86,23 +68,27 @@ def create_document(data_frame, file_name, pages):
 
 def run():
     query = input('Masukan kata kunci: ')
-    total = get_total_pages(query)
+    max_pages = input('Maksimal pages ')
+    total = int(max_pages)
     final_result = []
-    for pages in range(total):
-        pages += 1
-        final_result += get_all_item(query, pages)
+    try:
+        for pages in range(total):
+            pages += 1
+            final_result += get_all_item(query, pages)
 
-        # formating data
-        try:
-            os.mkdir('reports')
-        except FileExistsError:
-            pass
+            # formating data
+            try:
+                os.mkdir('reports')
+            except FileExistsError:
+                pass
 
-        with open('reports/{}.json'.format(query), 'w+') as final_data:
-            json.dump(final_result, final_data)
+            with open('reports/{}.json'.format(query), 'w+') as final_data:
+                json.dump(final_result, final_data)
 
-        print('Report Json berhasil dibuat\n')
-        create_document(final_result, query, pages)
+            print('Report Json berhasil dibuat\n')
+            create_document(final_result, query, pages)
+    except Exception:
+        print('Proses Scraping selesai')
 
 
 if __name__ == '__main__':
