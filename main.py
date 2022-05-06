@@ -17,11 +17,11 @@ def get_all_item(query, pages):
         'page': pages,
     }
     res = requests.get(url, params=params, headers=headers)
-
     # proses Scraping
     soup = BeautifulSoup(res.text, 'html.parser')
     contents = soup.find('div', 'list-berita')
     article = contents.findAll('article')
+    link_store = []
     newslist = []
     for item in article:
         title = item.find('h2', 'title').text
@@ -31,18 +31,33 @@ def get_all_item(query, pages):
         tag = getdate.text.split(', ')[0]
         date = getdate.text.split(', ')[1]
 
-        data_dict = {
-            'judul': title,
-            'url': link,
-            'deskripsi': desc,
-            'tag': tag,
-            'tanggal': date,
-        }
+        data_dict = dict()
+        data_dict['url'] = link
+        data_dict['judul'] = title
+        data_dict['deskripsi'] = desc
+        data_dict['tag'] = tag
+        data_dict['tanggal'] = date
+
+        link_dict = dict()
+        link_dict['link'] = link
+
+        link_store.append(link_dict)
         newslist.append(data_dict)
     if not newslist:
         return None
     else:
         return newslist
+
+
+def get_article(link):
+    res2 = requests.get(link, headers=headers)
+    soup = BeautifulSoup(res2.text, 'html.parser')
+    body_article = soup.find('div', 'itp_bodycontent detail__body-text').find_all('p')
+    for item in body_article:
+        isi = item.text
+        data = dict()
+        data['artikel'] = isi
+        return data
 
 
 def create_document(data_frame, file_name, pages):
@@ -61,7 +76,7 @@ def create_document(data_frame, file_name, pages):
 
 def run():
     query = input('Masukan kata kunci: ')
-    total = 99999999
+    total = 9999
     final_result = []
     try:
         for pages in range(total):
